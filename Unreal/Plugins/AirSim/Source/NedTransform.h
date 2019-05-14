@@ -30,8 +30,8 @@ public:
     NedTransform(const AActor* pivot, const NedTransform& global_transform);
 
     //UU -> local NED
-    Vector3r toLocalNed(const FVector& position) const;
-    Vector3r toGlobalNed(const FVector& position) const;
+    Vector3r toLocalNed(const FVector& position, bool offset) const;
+    Vector3r toGlobalNed(const FVector& position, bool offset) const;
     Quaternionr toNed(const FQuat& q) const;
     float toNed(float length) const;
     Pose toLocalNed(const FTransform& pose) const;
@@ -39,8 +39,8 @@ public:
 
 
     //local NED -> UU
-    FVector fromLocalNed(const Vector3r& position) const;
-    FVector fromGlobalNed(const Vector3r& position) const;
+    FVector fromLocalNed(const Vector3r& position, bool offset) const;
+    FVector fromGlobalNed(const Vector3r& position, bool offset) const;
     FQuat fromNed(const Quaternionr& q) const;
     float fromNed(float length) const;
     FTransform fromLocalNed(const Pose& pose) const;
