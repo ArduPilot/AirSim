@@ -295,12 +295,33 @@ private:
         if (sensors_ == nullptr)
             return;
 
-        const auto& gps_output = getGps()->getOutput();
-        const auto& imu_output = getImu()->getOutput();
-        // const auto& baro_output = getBarometer()->getOutput();
-        // const auto& mag_output = getMagnetometer()->getOutput();
-
         std::ostringstream oss;
+
+        // Send GPS data if present
+        const auto gps = getGps();
+        if (gps != nullptr) {
+            const auto& gps_output = gps->getOutput();
+            char gps_data[200];
+
+            snprintf(gps_data, sizeof(gps_data),
+                     ","
+                     "\"gps\": {"
+                     "\"lat\": %.7f,"
+                     "\"lon\": %.7f,"
+                     "\"alt\": %.3f"
+                     "},"
+                     "\"velocity\": {"
+                     "\"world_linear_velocity\": [%.12f, %.12f, %.12f]"
+                     "}",
+                     gps_output.gnss.geo_point.latitude,
+                     gps_output.gnss.geo_point.longitude,
+                     gps_output.gnss.geo_point.altitude,
+                     gps_output.gnss.velocity[0],
+                     gps_output.gnss.velocity[1],
+                     gps_output.gnss.velocity[2]);
+
+            oss << gps_data;
+        }
 
         // Send RC channels to Ardupilot if present
         if (is_rc_connected && last_rcData_.is_valid) {
@@ -331,14 +352,14 @@ private:
             oss << "]}";
         }
 
+        const auto& imu_output = getImu()->getOutput();
+
         float yaw;
         float pitch;
         float roll;
         VectorMath::toEulerianAngle(imu_output.orientation, pitch, roll, yaw);
 
         char buf[65000];
-
-        // TODO: Split the following sensor packet formation into different parts for individual sensors
 
         // UDP packets have a maximum size limit of 65kB
         int ret = snprintf(buf, sizeof(buf),
@@ -347,14 +368,6 @@ private:
                            "\"imu\": {"
                            "\"angular_velocity\": [%.12f, %.12f, %.12f],"
                            "\"linear_acceleration\": [%.12f, %.12f, %.12f]"
-                           "},"
-                           "\"gps\": {"
-                           "\"lat\": %.7f,"
-                           "\"lon\": %.7f,"
-                           "\"alt\": %.3f"
-                           "},"
-                           "\"velocity\": {"
-                           "\"world_linear_velocity\": [%.12f, %.12f, %.12f]"
                            "},"
                            "\"pose\": {"
                            "\"roll\": %.12f,"
@@ -370,12 +383,6 @@ private:
                            imu_output.linear_acceleration[0],
                            imu_output.linear_acceleration[1],
                            imu_output.linear_acceleration[2],
-                           gps_output.gnss.geo_point.latitude,
-                           gps_output.gnss.geo_point.longitude,
-                           gps_output.gnss.geo_point.altitude,
-                           gps_output.gnss.velocity[0],
-                           gps_output.gnss.velocity[1],
-                           gps_output.gnss.velocity[2],
                            roll, pitch, yaw,
                            oss.str().c_str());
 
